@@ -1,56 +1,152 @@
 #include <iostream>
-#include <windows.h> // Para Sleep() no Windows
-// #include <unistd.h> // Para usleep() no Linux/Mac
-
+#include <ctime>
 using namespace std;
 
-void clearScreen() {
-    // Limpa a tela do console
-    system("cls"); // Para Windows
-    // system("clear"); // Para Linux/Mac
+struct no {
+    int info;
+    int prior;
+    int tipo;
+    no *link;
+};
+
+no *inicializaFP(no *L)
+{
+    L = NULL;
+    return L;
 }
 
-void drawPlane(int position) {
-    // Desenha o avião em diferentes posições para simular movimento
-    for (int i = 0; i < position; i++) {
-        cout << " ";
+no *insereFP(no *L, int valor, int prior)
+{
+    no *N, *P, *ANT;
+
+    N = new no;
+    N->info = valor;
+    N->prior = prior;
+
+    if (L == NULL) {
+        L = N;
+        N->link = NULL;
     }
-    cout << "       ____" << endl;
-    
-    for (int i = 0; i < position; i++) {
-        cout << " ";
+    else {
+        P = L;
+
+        while ((P != NULL) && (prior >= P->prior)) {
+            ANT = P;
+            P = P->link;
+        }
+        if (P == L) {
+            N->link = L;
+            L = N;
+        }
+        else {
+            ANT->link = N;
+            N->link = P;
+        }
     }
-    cout << "      /____\\" << endl;
-    
-    for (int i = 0; i < position; i++) {
-        cout << " ";
+    return L;
+}
+
+no *removeFP(no *L, int *n, int * prior) {
+	no *AUX;
+
+	if (L != NULL) {
+		*n = L->info;
+		*prior = L->prior; 
+		AUX = L;
+		L = L->link;
+		delete AUX;
+	}
+	return L;
+}
+
+int verificaSeVazia(no *L) {
+	if (L == NULL)
+		return 1;
+	else
+		return 0;
+}
+
+void exibe(no *L)
+{
+    no *P = L;
+    cout << " ";
+    while (P != NULL) {
+		cout << "N:" << P->info << " P:" << P->prior << "|";//N=numero do voo, P=prioridade
+        P = P->link;
     }
-    cout << "   XXXXXXXXXXXX>" << endl;
-    
-    for (int i = 0; i < position; i++) {
-        cout << " ";
-    }
-    cout << "     /  /  /" << endl;
-    
-    // Desenha o terminal à direita
-    cout << string(60, ' ') << "|======|" << endl;
-    cout << string(60, ' ') << "| TERM |" << endl;
-    cout << string(60, ' ') << "|======|" << endl;
 }
 
 int main() {
-    // Simula o avião se aproximando do terminal
-    for (int pos = 0; pos < 50; pos += 2) {
-        clearScreen();
-        drawPlane(pos);
-        Sleep(200); // Pausa por 200ms (Windows)
-        // usleep(200000); // Pausa por 200ms (Linux/Mac)
+    no* fp1 = inicializaFP(fp1);    
+    no* fp2 = inicializaFP(fp2);    
+
+    no voo[50]; 
+    int idVoo = 0;
+    bool continua = true;
+
+    const string RESET = "\033[0m"; 
+    const string VERMELHO = "\033[31m";
+    const string VERDE = "\033[32m";
+    const string AMARELO = "\033[33m";
+    const string AZUL = "\033[34m";
+    const string MAGENTA = "\033[35m";
+    const string CIANO = "\033[36m";
+
+    srand(time(0));   
+
+    for(int ut = 0; continua; ut++) {
+        cout << VERMELHO << "\nUnidade de Tempo " << ut << RESET << endl; 
+        if(idVoo <50){
+            cout << MAGENTA << "\nChegada de 5 solicitacoes!" << RESET << endl;
+
+            for (int i = 0; i < 5; i++) {
+                voo[idVoo].info = idVoo;
+                voo[idVoo].prior = (rand()%2) + 1;     // 1 = alta, 2 = media
+                voo[idVoo].tipo = rand()%2;      
+
+                if(voo[idVoo].tipo == 0) {
+                    fp1 = insereFP(fp1, idVoo, voo[idVoo].prior);
+                    cout << "\nVoo " << voo[idVoo].info << "(" << voo[idVoo].prior << ") entrou na fila de POUSO" << endl;
+                    exibe(fp1);
+                    cout << endl;
+                } else {
+                    fp2 = insereFP(fp2, idVoo, voo[idVoo].prior);
+                    cout << "\nVoo " << voo[idVoo].info << " (" << voo[idVoo].prior << ") entrou na fila de DECOLAGEM" << endl;
+                    exibe(fp2);
+                    cout << endl;
+                }
+                idVoo++;
+            }
+        }else {
+            cout << "\nNao chegam mais solicitacoes." << endl;
+        }
+
+        if (ut % 2 == 0 && fp1 != NULL) {
+            int vooRemovido = 0, prioridadeRemovida = 0;
+            fp1 = removeFP(fp1, &vooRemovido, &prioridadeRemovida);
+            cout << AMARELO << "\nVoo " << vooRemovido << " (" << prioridadeRemovida << ") realizou POUSO" << RESET << endl;
+        }
+
+        
+
+        if (ut % 3 == 0 && fp2 != NULL) {
+            int vooRemovido = 0, prioridadeRemovida = 0;
+            fp2 = removeFP(fp2, &vooRemovido, &prioridadeRemovida);
+            cout << AZUL << "\nVoo " << vooRemovido << " (" << prioridadeRemovida << ") realizou DECOLAGEM" << RESET << endl;
+        }
+        cout << VERDE << "\n=== Status das filas ===" << RESET << endl;
+        cout << VERDE << "\nPista de pouso liberada";
+        exibe(fp1);
+        cout << RESET << endl;
+
+        cout << VERDE <<"\nPista de decolagem liberada";
+        exibe(fp2);
+        cout << RESET << endl;
+
+         if (idVoo >= 50 && fp1 == NULL && fp2 == NULL) {
+            cout << "=== Fim da simulacao: Todos os voos foram processados ===";
+            continua = false;
+        }
     }
-    
-    // Avião parado no terminal
-    clearScreen();
-    drawPlane(50);
-    cout << "\nAvião pousou no terminal com sucesso!" << endl;
-    
     return 0;
 }
